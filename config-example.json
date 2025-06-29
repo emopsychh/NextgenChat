@@ -1,0 +1,69 @@
+{
+  "chat": {
+    "enableLocalChat": true,
+    "enableGlobalChat": true,
+    "localChatRadius": 100,
+    "localChatPrefix": "&7[Локальный] ",
+    "globalChatPrefix": "&6[G] ",
+    "localChatSymbol": "",
+    "globalChatSymbol": "!",
+    "defaultChatMode": "local",
+    "globalChatFormat": "&6[G] &f{player}: &7{message}",
+    "localChatFormat": "&7[Локальный] &f{player}: &7{message}",
+    "playerNameColor": "&f",
+    "messageColor": "&7",
+    "globalTagColor": "&6",
+    "localTagColor": "&7"
+  },
+  "antiSpam": {
+    "enableAntiSpam": true,
+    "enableAntiFlood": true,
+    "messageCooldown": 3,
+    "maxRepeatedMessages": 3,
+    "floodThreshold": 5,
+    "floodTimeWindow": 10
+  },
+  "notifications": {
+    "enableJoinMessages": true,
+    "enableQuitMessages": true,
+    "joinMessage": "&a+ {player} присоединился к серверу",
+    "quitMessage": "&c- {player} покинул сервер",
+    "playJoinSound": true,
+    "playQuitSound": false
+  },
+  "autoBroadcast": {
+    "enableAutoBroadcast": true,
+    "broadcastInterval": 300,
+    "randomizeMessages": false,
+    "showBroadcastPrefix": false,
+    "broadcastPrefix": "&d[Автобродкаст] &r",
+    "broadcastMessages": [
+      "&6&lДобро пожаловать на сервер!",
+      "&eНе забудьте прочитать правила!",
+      "&aПриятной игры!",
+      "&bОнлайн: &f{online}&b/&f{max_online}",
+      "&dСервер работает стабильно!",
+      "&7Использование памяти: &f{memory_used}MB&7/&f{memory_max}MB",
+      "&3Время: &f{uptime_hours}&3ч &f{uptime_minutes}&3м",
+      "&5Сервер: &f{server_name}",
+      "&2Помните о правилах поведения!",
+      "&9Присоединяйтесь к нашему Discord!"
+    ]
+  },
+  "moderation": {
+    "enableModeration": true,
+    "saveMuteData": true,
+    "muteMessage": "&cВы заблокированы в чате на {duration}. Причина: {reason}",
+    "unmuteMessage": "&aВы разблокированы в чате",
+    "muteNotification": "&c{player} заблокирован в чате на {duration}",
+    "unmuteNotification": "&a{player} разблокирован в чате",
+    "alreadyMutedMessage": "&c{player} уже заблокирован в чате",
+    "notMutedMessage": "&c{player} не заблокирован в чате",
+    "noPermissionMessage": "&cУ вас нет прав для использования этой команды",
+    "playerNotFoundMessage": "&cИгрок {player} не найден",
+    "invalidDurationMessage": "&cНеверный формат времени. Используйте: 1h, 30m, 1d",
+    "defaultMuteDuration": "1h",
+    "notifyStaffOnMute": true,
+    "logMuteActions": true
+  }
+} 

@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 1,
+	"id": "chatmanager",
+	"version": "${version}",
+	"name": "ChatManager",
+	"description": "Advanced chat management system for Fabric servers with local/global chat, anti-spam, and more features",
+	"authors": [
+		"ChatManager Team"
+	],
+	"contact": {
+		"homepage": "https://github.com/your-repo/chatmanager",
+		"sources": "https://github.com/your-repo/chatmanager"
+	},
+	"license": "MIT",
+	"icon": "assets/chatmanager/icon.png",
+	"environment": "server",
+	"entrypoints": {
+		"main": [
+			"com.example.ChatManagerMod"
+		]
+	},
+	"mixins": [
+		"chatmanager.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.14",
+		"minecraft": "~1.20.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"luckperms": "*"
+	}
+}
