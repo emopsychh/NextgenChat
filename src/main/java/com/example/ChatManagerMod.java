@@ -202,7 +202,7 @@ public class ChatManagerMod implements ModInitializer {
 				.then(literal("reload")
 					.requires(source -> {
 						ServerPlayerEntity player = source.getPlayer();
-						return player != null && PERMISSION_MANAGER.canReloadConfig(player);
+						return player != null && PERMISSION_MANAGER.canUseReloadCommand(player);
 					})
 					.executes(context -> {
 						CONFIG.load();
@@ -214,7 +214,7 @@ public class ChatManagerMod implements ModInitializer {
 				.then(literal("permissions")
 					.requires(source -> {
 						ServerPlayerEntity player = source.getPlayer();
-						return player != null && PERMISSION_MANAGER.canReloadConfig(player);
+						return player != null && PERMISSION_MANAGER.canUsePermissionsCommand(player);
 					})
 					.then(literal("reload")
 						.executes(context -> {
@@ -236,7 +236,7 @@ public class ChatManagerMod implements ModInitializer {
 				.then(literal("broadcast")
 					.requires(source -> {
 						ServerPlayerEntity player = source.getPlayer();
-						return player != null && PERMISSION_MANAGER.canReloadConfig(player);
+						return player != null && PERMISSION_MANAGER.canUseBroadcastCommand(player);
 					})
 					.executes(context -> {
 						if (CONFIG.autoBroadcast.enableAutoBroadcast && CONFIG.autoBroadcast.broadcastMessages.length > 0) {

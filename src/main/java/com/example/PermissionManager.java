@@ -293,4 +293,49 @@ public class PermissionManager {
             return false;
         }
     }
+
+    /**
+     * Проверяет, может ли игрок использовать команду /nextgenchat reload
+     */
+    public boolean canUseReloadCommand(ServerPlayerEntity player) {
+        return hasPermissionForCommand(player, "nextgenchat.command.reload");
+    }
+
+    /**
+     * Проверяет, может ли игрок использовать команду /nextgenchat broadcast
+     */
+    public boolean canUseBroadcastCommand(ServerPlayerEntity player) {
+        return hasPermissionForCommand(player, "nextgenchat.command.broadcast");
+    }
+
+    /**
+     * Проверяет, может ли игрок использовать команду /nextgenchat permissions
+     */
+    public boolean canUsePermissionsCommand(ServerPlayerEntity player) {
+        return hasPermissionForCommand(player, "nextgenchat.command.permissions");
+    }
+
+    /**
+     * Универсальная проверка прав на команду
+     */
+    private boolean hasPermissionForCommand(ServerPlayerEntity player, String permission) {
+        PlayerPermissions perms = getPlayerPermissions(player);
+        // Для обратной совместимости: если nextgenchat.commands=true, разрешаем все команды
+        if (perms.canUseCommands) return true;
+        // Проверяем конкретное право
+        Object luckPerms;
+        try {
+            luckPerms = Class.forName("net.luckperms.api.LuckPermsProvider").getMethod("get").invoke(null);
+            Object userManager = luckPerms.getClass().getMethod("getUserManager").invoke(luckPerms);
+            Object future = userManager.getClass().getMethod("loadUser", UUID.class, String.class)
+                    .invoke(userManager, player.getUuid(), player.getName().getString());
+            Object user = future.getClass().getMethod("get").invoke(future);
+            if (user == null) return false;
+            Object cachedData = user.getClass().getMethod("getCachedData").invoke(user);
+            Object permissionData = cachedData.getClass().getMethod("getPermissionData").invoke(cachedData);
+            return hasPermission(permissionData, permission);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 } 
