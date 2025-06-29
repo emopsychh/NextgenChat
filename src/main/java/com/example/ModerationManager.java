@@ -243,7 +243,7 @@ public class ModerationManager {
         if (ChatManagerMod.CONFIG.moderation.notifyStaffOnMute) {
             String staffNotification = "&e[Модерация] " + notification;
             for (ServerPlayerEntity player : moderator.getServer().getPlayerManager().getPlayerList()) {
-                if (player.hasPermissionLevel(2)) { // OP уровень 2+
+                if (ChatManagerMod.PERMISSION_MANAGER.canReceiveModerationNotifications(player)) {
                     player.sendMessage(Text.literal(staffNotification.replace("&", "§")), false);
                 }
             }
@@ -262,6 +262,16 @@ public class ModerationManager {
         String notification = ChatManagerMod.CONFIG.moderation.unmuteNotification
             .replace("{player}", target.getName().getString());
         moderator.sendMessage(Text.literal(notification.replace("&", "§")), false);
+        
+        // Уведомление администрации
+        if (ChatManagerMod.CONFIG.moderation.notifyStaffOnMute) {
+            String staffNotification = "&e[Модерация] " + notification;
+            for (ServerPlayerEntity player : moderator.getServer().getPlayerManager().getPlayerList()) {
+                if (ChatManagerMod.PERMISSION_MANAGER.canReceiveModerationNotifications(player)) {
+                    player.sendMessage(Text.literal(staffNotification.replace("&", "§")), false);
+                }
+            }
+        }
     }
     
     /**

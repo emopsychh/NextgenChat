@@ -27,6 +27,7 @@ public class ChatManagerMod implements ModInitializer {
 	public static ChatManagerConfig CONFIG;
 	public static ChatManager CHAT_MANAGER;
 	public static ModerationManager MODERATION_MANAGER;
+	public static PermissionManager PERMISSION_MANAGER;
 	
 	// Очередь для отложенных сообщений
 	private static final ConcurrentLinkedQueue<DelayedMessage> messageQueue = new ConcurrentLinkedQueue<>();
@@ -52,6 +53,9 @@ public class ChatManagerMod implements ModInitializer {
 		
 		// Инициализируем менеджер модерации
 		MODERATION_MANAGER = new ModerationManager();
+		
+		// Инициализируем менеджер прав
+		PERMISSION_MANAGER = new PermissionManager();
 		
 		// Регистрируем обработчики событий
 		registerEvents();
@@ -196,6 +200,10 @@ public class ChatManagerMod implements ModInitializer {
 					})
 				)
 				.then(literal("reload")
+					.requires(source -> {
+						ServerPlayerEntity player = source.getPlayer();
+						return player != null && PERMISSION_MANAGER.canReloadConfig(player);
+					})
 					.executes(context -> {
 						CONFIG.load();
 						LOGGER.info("NextgenChat config reloaded!");
@@ -203,41 +211,55 @@ public class ChatManagerMod implements ModInitializer {
 						return Command.SINGLE_SUCCESS;
 					})
 				)
+				.then(literal("permissions")
+					.requires(source -> {
+						ServerPlayerEntity player = source.getPlayer();
+						return player != null && PERMISSION_MANAGER.canReloadConfig(player);
+					})
+					.then(literal("reload")
+						.executes(context -> {
+							PERMISSION_MANAGER.clearAllPermissions();
+							LOGGER.info("NextgenChat permissions cache cleared!");
+							context.getSource().sendFeedback(() -> net.minecraft.text.Text.literal("§aКэш прав NextgenChat очищен!"), false);
+							return Command.SINGLE_SUCCESS;
+						})
+					)
+					.then(literal("status")
+						.executes(context -> {
+							boolean luckPermsAvailable = PERMISSION_MANAGER.isLuckPermsAvailable();
+							String status = luckPermsAvailable ? "§aдоступен" : "§cнедоступен";
+							context.getSource().sendFeedback(() -> net.minecraft.text.Text.literal("§eLuckPerms: " + status), false);
+							return Command.SINGLE_SUCCESS;
+						})
+					)
+				)
 				.then(literal("broadcast")
+					.requires(source -> {
+						ServerPlayerEntity player = source.getPlayer();
+						return player != null && PERMISSION_MANAGER.canReloadConfig(player);
+					})
 					.executes(context -> {
-						// Отправляем следующее сообщение автобродкаста немедленно
 						if (CONFIG.autoBroadcast.enableAutoBroadcast && CONFIG.autoBroadcast.broadcastMessages.length > 0) {
 							String broadcastMessage;
 							if (CONFIG.autoBroadcast.randomizeMessages) {
-								// Случайное сообщение
 								int randomIndex = (int) (Math.random() * CONFIG.autoBroadcast.broadcastMessages.length);
 								broadcastMessage = CONFIG.autoBroadcast.broadcastMessages[randomIndex];
 							} else {
-								// Последовательное сообщение
 								broadcastMessage = CONFIG.autoBroadcast.broadcastMessages[currentBroadcastIndex];
-								// Переходим к следующему сообщению
 								currentBroadcastIndex = (currentBroadcastIndex + 1) % CONFIG.autoBroadcast.broadcastMessages.length;
 							}
-							
-							// Обрабатываем плейсхолдеры автобродкаста
 							broadcastMessage = replaceBroadcastPlaceholders(broadcastMessage, context.getSource().getServer());
-							
-							// Добавляем префикс если включен
 							if (CONFIG.autoBroadcast.showBroadcastPrefix) {
 								broadcastMessage = CONFIG.autoBroadcast.broadcastPrefix + broadcastMessage;
 							}
-							
 							Text messageText = Text.literal(broadcastMessage.replace("&", "§"));
 							context.getSource().getServer().getPlayerManager().broadcast(messageText, false);
-							
 							context.getSource().sendFeedback(() -> net.minecraft.text.Text.literal("§aСообщение автобродкаста отправлено!"), false);
 						} else {
 							context.getSource().sendFeedback(() -> net.minecraft.text.Text.literal("§cАвтобродкаст отключен или нет сообщений!"), false);
 						}
 						return Command.SINGLE_SUCCESS;
 					})
-				)
-				.then(literal("broadcast")
 					.then(literal("toggle")
 						.executes(context -> {
 							CONFIG.autoBroadcast.enableAutoBroadcast = !CONFIG.autoBroadcast.enableAutoBroadcast;
@@ -261,7 +283,6 @@ public class ChatManagerMod implements ModInitializer {
 			
 			// Команды модерации
 			dispatcher.register(literal("mute")
-				.requires(source -> source.hasPermissionLevel(2)) // Требует OP уровень 2+
 				.then(argument("player", EntityArgumentType.player())
 					.executes(context -> {
 						// Мут без указания времени (использует значение по умолчанию)
@@ -270,6 +291,11 @@ public class ChatManagerMod implements ModInitializer {
 						
 						if (moderator == null) {
 							context.getSource().sendError(Text.literal("§cЭта команда может использоваться только игроками!"));
+							return 0;
+						}
+						
+						if (!PERMISSION_MANAGER.canMutePlayers(moderator)) {
+							PERMISSION_MANAGER.sendNoPermissionMessage(moderator, "nextgenchat.moderate.mute");
 							return 0;
 						}
 						
@@ -285,6 +311,11 @@ public class ChatManagerMod implements ModInitializer {
 							
 							if (moderator == null) {
 								context.getSource().sendError(Text.literal("§cЭта команда может использоваться только игроками!"));
+								return 0;
+							}
+							
+							if (!PERMISSION_MANAGER.canMutePlayers(moderator)) {
+								PERMISSION_MANAGER.sendNoPermissionMessage(moderator, "nextgenchat.moderate.mute");
 								return 0;
 							}
 							
@@ -304,6 +335,11 @@ public class ChatManagerMod implements ModInitializer {
 									return 0;
 								}
 								
+								if (!PERMISSION_MANAGER.canMutePlayers(moderator)) {
+									PERMISSION_MANAGER.sendNoPermissionMessage(moderator, "nextgenchat.moderate.mute");
+									return 0;
+								}
+								
 								boolean success = MODERATION_MANAGER.mutePlayer(target, moderator, duration, reason);
 								return success ? Command.SINGLE_SUCCESS : 0;
 							})
@@ -313,7 +349,6 @@ public class ChatManagerMod implements ModInitializer {
 			);
 			
 			dispatcher.register(literal("unmute")
-				.requires(source -> source.hasPermissionLevel(2)) // Требует OP уровень 2+
 				.then(argument("player", EntityArgumentType.player())
 					.executes(context -> {
 						ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "player");
@@ -324,6 +359,11 @@ public class ChatManagerMod implements ModInitializer {
 							return 0;
 						}
 						
+						if (!PERMISSION_MANAGER.canUnmutePlayers(moderator)) {
+							PERMISSION_MANAGER.sendNoPermissionMessage(moderator, "nextgenchat.moderate.unmute");
+							return 0;
+						}
+						
 						boolean success = MODERATION_MANAGER.unmutePlayer(target, moderator);
 						return success ? Command.SINGLE_SUCCESS : 0;
 					})
@@ -331,8 +371,13 @@ public class ChatManagerMod implements ModInitializer {
 			);
 			
 			dispatcher.register(literal("mutelist")
-				.requires(source -> source.hasPermissionLevel(2)) // Требует OP уровень 2+
 				.executes(context -> {
+					ServerPlayerEntity player = context.getSource().getPlayer();
+					if (player != null && !PERMISSION_MANAGER.canViewMutes(player)) {
+						PERMISSION_MANAGER.sendNoPermissionMessage(player, "nextgenchat.moderate.view");
+						return 0;
+					}
+					
 					// Показывает список заблокированных игроков
 					java.util.List<ModerationManager.MuteData> mutedPlayers = new java.util.ArrayList<>();
 					for (ModerationManager.MuteData muteData : MODERATION_MANAGER.mutedPlayers.values()) {
@@ -371,6 +416,12 @@ public class ChatManagerMod implements ModInitializer {
 		source.sendFeedback(() -> Text.literal("§f/nextgenchat reload §7- перезагрузить конфигурацию"), false);
 		source.sendFeedback(() -> Text.literal(""), false);
 		
+		// Команды прав
+		source.sendFeedback(() -> Text.literal("§e§lУправление правами:"), false);
+		source.sendFeedback(() -> Text.literal("§f/nextgenchat permissions reload §7- очистить кэш прав"), false);
+		source.sendFeedback(() -> Text.literal("§f/nextgenchat permissions status §7- показать статус LuckPerms"), false);
+		source.sendFeedback(() -> Text.literal(""), false);
+		
 		// Команды автобродкаста
 		source.sendFeedback(() -> Text.literal("§e§lАвтобродкаст:"), false);
 		source.sendFeedback(() -> Text.literal("§f/nextgenchat broadcast §7- отправить следующее сообщение автобродкаста"), false);
@@ -378,30 +429,12 @@ public class ChatManagerMod implements ModInitializer {
 		source.sendFeedback(() -> Text.literal("§f/nextgenchat broadcast status §7- показать статус автобродкаста"), false);
 		source.sendFeedback(() -> Text.literal(""), false);
 		
-		// Команды модерации (только для OP)
-		if (source.hasPermissionLevel(2)) {
-			source.sendFeedback(() -> Text.literal("§e§lМодерация (требует OP):"), false);
-			source.sendFeedback(() -> Text.literal("§f/mute <игрок> [время] [причина] §7- заблокировать игрока в чате"), false);
-			source.sendFeedback(() -> Text.literal("§f/unmute <игрок> §7- разблокировать игрока в чате"), false);
-			source.sendFeedback(() -> Text.literal("§f/mutelist §7- показать список заблокированных игроков"), false);
-			source.sendFeedback(() -> Text.literal(""), false);
-			
-			// Примеры команд модерации
-			source.sendFeedback(() -> Text.literal("§e§lПримеры команд модерации:"), false);
-			source.sendFeedback(() -> Text.literal("§7/mute PlayerName §8- заблокировать на 1 час (по умолчанию)"), false);
-			source.sendFeedback(() -> Text.literal("§7/mute PlayerName 30m §8- заблокировать на 30 минут"), false);
-			source.sendFeedback(() -> Text.literal("§7/mute PlayerName 2h Спам §8- заблокировать на 2 часа с причиной"), false);
-			source.sendFeedback(() -> Text.literal("§7/mute PlayerName 1d Нарушение правил §8- заблокировать на 1 день"), false);
-			source.sendFeedback(() -> Text.literal(""), false);
-			
-			// Форматы времени
-			source.sendFeedback(() -> Text.literal("§e§lФорматы времени:"), false);
-			source.sendFeedback(() -> Text.literal("§7m §8- минуты (30m = 30 минут)"), false);
-			source.sendFeedback(() -> Text.literal("§7h §8- часы (2h = 2 часа)"), false);
-			source.sendFeedback(() -> Text.literal("§7d §8- дни (1d = 1 день)"), false);
-			source.sendFeedback(() -> Text.literal("§7w §8- недели (1w = 1 неделя)"), false);
-			source.sendFeedback(() -> Text.literal(""), false);
-		}
+		// Команды модерации
+		source.sendFeedback(() -> Text.literal("§e§lМодерация:"), false);
+		source.sendFeedback(() -> Text.literal("§f/mute <игрок> [время] [причина] §7- заблокировать игрока в чате"), false);
+		source.sendFeedback(() -> Text.literal("§f/unmute <игрок> §7- разблокировать игрока в чате"), false);
+		source.sendFeedback(() -> Text.literal("§f/mutelist §7- показать список заблокированных игроков"), false);
+		source.sendFeedback(() -> Text.literal(""), false);
 		
 		// Информация о чате
 		source.sendFeedback(() -> Text.literal("§e§lСистема чата:"), false);
@@ -429,10 +462,14 @@ public class ChatManagerMod implements ModInitializer {
 		String chatStatus = CONFIG.chat.enableLocalChat && CONFIG.chat.enableGlobalChat ? "§aвключена" : "§cвыключена";
 		String broadcastStatus = CONFIG.autoBroadcast.enableAutoBroadcast ? "§aвключен" : "§cвыключен";
 		String moderationStatus = CONFIG.moderation.enableModeration ? "§aвключена" : "§cвыключена";
+		String permissionStatus = CONFIG.permissions.enablePermissionSystem ? "§aвключена" : "§cвыключена";
+		String luckPermsStatus = PERMISSION_MANAGER.isLuckPermsAvailable() ? "§aдоступен" : "§cнедоступен";
 		
 		source.sendFeedback(() -> Text.literal("§7Система чата: " + chatStatus), false);
 		source.sendFeedback(() -> Text.literal("§7Автобродкаст: " + broadcastStatus), false);
 		source.sendFeedback(() -> Text.literal("§7Модерация: " + moderationStatus), false);
+		source.sendFeedback(() -> Text.literal("§7Система прав: " + permissionStatus), false);
+		source.sendFeedback(() -> Text.literal("§7LuckPerms: " + luckPermsStatus), false);
 		source.sendFeedback(() -> Text.literal(""), false);
 		
 		// Подвал

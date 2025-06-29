@@ -29,6 +29,9 @@ public class ChatManagerConfig {
     // Настройки модерации
     public ModerationSettings moderation = new ModerationSettings();
     
+    // Настройки прав
+    public PermissionSettings permissions = new PermissionSettings();
+    
     public static class ChatSettings {
         public boolean enableLocalChat = true;
         public boolean enableGlobalChat = true;
@@ -103,6 +106,30 @@ public class ChatManagerConfig {
         public boolean logMuteActions = true; // логировать действия модерации
     }
     
+    public static class PermissionSettings {
+        public boolean enablePermissionSystem = true;
+        public boolean useLuckPerms = true;
+        public String noPermissionMessage = "&cУ вас нет права {permission} для выполнения этого действия";
+        public String permissionDeniedMessage = "&cДоступ запрещен";
+        
+        // Права по умолчанию (когда LuckPerms недоступен)
+        public boolean defaultCanUseGlobalChat = false;
+        public boolean defaultCanUseLocalChat = false;
+        public boolean defaultCanMutePlayers = false;
+        public boolean defaultCanUnmutePlayers = false;
+        public boolean defaultCanReloadConfig = false;
+        public boolean defaultCanViewMutes = false;
+        public boolean defaultCanBypassAntiSpam = false;
+        public boolean defaultCanBypassMute = false;
+        public boolean defaultCanUseCommands = false;
+        public boolean defaultCanReceiveModerationNotifications = false;
+        
+        // Настройки кэширования прав
+        public boolean enablePermissionCache = true;
+        public int permissionCacheTimeout = 300; // секунды (5 минут)
+        public boolean debugPermissionLogging = false; // Включить подробное логирование прав
+    }
+    
     public void load() {
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve(CONFIG_FILE);
         File configFile = configPath.toFile();
@@ -115,6 +142,7 @@ public class ChatManagerConfig {
                 this.notifications = loaded.notifications;
                 this.autoBroadcast = loaded.autoBroadcast;
                 this.moderation = loaded.moderation;
+                this.permissions = loaded.permissions;
                 ChatManagerMod.LOGGER.info("ChatManager config loaded successfully");
             } catch (IOException e) {
                 ChatManagerMod.LOGGER.error("Failed to load ChatManager config", e);

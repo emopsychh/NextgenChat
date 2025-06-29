@@ -26,7 +26,8 @@ public class ChatManager {
         
         // Проверяем, не заблокирован ли игрок
         if (ChatManagerMod.MODERATION_MANAGER != null && 
-            ChatManagerMod.MODERATION_MANAGER.isPlayerMuted(player.getUuid())) {
+            ChatManagerMod.MODERATION_MANAGER.isPlayerMuted(player.getUuid()) &&
+            !ChatManagerMod.PERMISSION_MANAGER.canBypassMute(player)) {
             
             ModerationManager.MuteData muteData = ChatManagerMod.MODERATION_MANAGER.getMuteData(player.getUuid());
             if (muteData != null) {
@@ -44,6 +45,18 @@ public class ChatManager {
         
         // Определяем режим чата
         ChatMode chatMode = determineChatMode(player, message);
+        
+        // Проверяем права на конкретный режим чата
+        if (chatMode == ChatMode.GLOBAL && !ChatManagerMod.PERMISSION_MANAGER.canUseGlobalChat(player)) {
+            ChatManagerMod.PERMISSION_MANAGER.sendNoPermissionMessage(player, "nextgenchat.chat.global");
+            return;
+        }
+        
+        if (chatMode == ChatMode.LOCAL && !ChatManagerMod.PERMISSION_MANAGER.canUseLocalChat(player)) {
+            ChatManagerMod.PERMISSION_MANAGER.sendNoPermissionMessage(player, "nextgenchat.chat.local");
+            return;
+        }
+        
         // Обрабатываем сообщение в зависимости от режима
         String processedMessage = processMessage(player, message, chatMode);
         // Отправляем сообщение
