@@ -1,31 +1,26 @@
 {
 	"schemaVersion": 1,
-	"id": "chatmanager",
+	"id": "nextgenchat",
 	"version": "${version}",
-	"name": "ChatManager",
-	"description": "Advanced chat management system for Fabric servers with local/global chat, anti-spam, and more features",
+	"name": "NextgenChat",
+	"description": "Advanced chat management system for Fabric servers with local/global chat, auto-broadcast, and moderation",
 	"authors": [
-		"ChatManager Team"
+		"NextgenChat"
 	],
-	"contact": {
-		"homepage": "https://github.com/your-repo/chatmanager",
-		"sources": "https://github.com/your-repo/chatmanager"
-	},
 	"license": "MIT",
-	"icon": "assets/chatmanager/icon.png",
 	"environment": "server",
 	"entrypoints": {
 		"main": [
-			"com.example.ChatManagerMod"
+			"com.nextgenchat.NextgenChatMod"
 		]
 	},
 	"mixins": [
-		"chatmanager.mixins.json"
+		"nextgenchat.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.16.14",
-		"minecraft": "~1.20.1",
-		"java": ">=21",
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.1",
+		"java": ">=25",
 		"fabric-api": "*"
 	},
 	"suggests": {
